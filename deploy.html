@@ -136,47 +136,47 @@
                 },
                 //_readAndUpdate:function(){
                     //var that = this,
-								//result.set('Parent', _newParent);
-								//Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
-							//}
-						//}
-					//});
-				//},      			
-				// Main Copy Functions
-				onqModelRetrieved: function() {
-					var that = this;
-					that._type = 'PortfolioItem/' + that._type,
-					Rally.data.ModelFactory.getModel({
-						type: that._type,
-						success: this.onModelRetrieved,
-						scope: this
-					});     
-				}, 				
-				onModelRetrieved: function(model) {
-					this.model = model;
-					this.createFeature();
-				},
-				createFeature: function() {
-					var record = Ext.create(this.model, {
-						Name: "(Copy of) " + this._newObj.get('Name'),
-					});
-					record.save({
-						callback: function(result, operation) {
-							if(operation.wasSuccessful()) {
-								_newParent = result
-								Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
-							}
-							else{
-								console.log("error");
-							}
-						}
-					});
-				}       
+			//result.set('Parent', _newParent);
+			//Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
+			//}
+		//}
+		//});
+		//},      			
+		// Main Copy Functions
+		onqModelRetrieved: function() {
+			var that = this;
+			that._type = 'PortfolioItem/' + that._type,
+			Rally.data.ModelFactory.getModel({
+				type: that._type,
+				success: this.onModelRetrieved,
+				scope: this
+			});     
+		}, 				
+		onModelRetrieved: function(model) {
+			this.model = model;
+			this.createFeature();
+		},
+		createFeature: function() {
+			var record = Ext.create(this.model, {
+				Name: "(Copy of) " + this._newObj.get('Name'),
 			});
-			Rally.launchApp('CustomApp', {
-				name: 'Feature Deep Copy'
-			});				
+			record.save({
+				callback: function(result, operation) {
+					if(operation.wasSuccessful()) {
+						_newParent = result
+						Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
+					}
+					else{
+						console.log("error");
+					}
+				}
+			});
+		}       
 		});
+		Rally.launchApp('CustomApp', {
+			name: 'Feature Deep Copy'
+		});				
+	});
 	</script>
 
 	<style type="text/css">
