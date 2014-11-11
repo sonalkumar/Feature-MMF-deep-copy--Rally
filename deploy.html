@@ -109,30 +109,29 @@
 					});
 					record.save({
 						callback: function(result, operation) {
-							if(operation.wasSuccessful()) {
-								//that._record = result,
-			                    id = result.get("ObjectID");
-								var childrens = _newParent.getCollection('Children');
-			                    childrens.load(id,{
-			                        fetch:["Name","FormattedID","Parent"],
-			                        callback:function(other_record,operation){
-			                            //console.log("Parent prior to update:",_newParent.get("_ref")),
-			                            other_record.set("Parent", _newParent.get("_ref")),
-			                            other_record.save({
-			                            	callback:function(other_record,operation){
-			                            		if(operation.wasSuccessful()) {
-													console.log("now record value", other_record);
-											    } else {
-												    console.log("error");
-												}   
-											}
-										})
-
+						if(operation.wasSuccessful()) {
+							//that._record = result,
+	                    			id = result.get("ObjectID");
+						var childrens = _newParent.getCollection('Children');
+		                		childrens.load(id,{
+			                        	fetch:["Name","FormattedID","Parent"],
+			                        	callback:function(other_record,operation){
+				                        	//console.log("Parent prior to update:",_newParent.get("_ref")),
+				                            	other_record.set("Parent", _newParent.get("_ref")),
+				                            	other_record.save({
+					                            	callback:function(other_record,operation){
+					                            		if(operation.wasSuccessful()) {
+											console.log("now record value", other_record);
+										} else {
+											console.log("error");
+										}   
 									}
-								});
-                            }
-                        }
-                    })
+								})
+							}
+						});
+                            		}
+                        	}
+                    	})
                 },
                 //_readAndUpdate:function(){
                     //var that = this,
