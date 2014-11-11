@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>Deep Copy</title>
+	<script type="text/javascript" src="https://rally1.rallydev.com/apps/2.0rc3/sdk.js"></script>
+	<script type="text/javascript">
+		Rally.onReady(function() {
+			Ext.define('CustomApp', {
+				extend: 'Rally.app.App',
+				componentCls: 'app',
+				_newObj : {},
+				//_childObj : {},
+				_newParent : {},
+				childrens: [],
+				_type : null,
+				launch: function() {
+					Ext.create('Rally.ui.dialog.ChooserDialog', {
+						width: 450,
+						autoScroll: true,
+						height: 525,
+						title: 'Select to Copy',
+						pageSize: 100,
+						closable: false,
+						selectionButtonText: 'Copy',                  
+						artifactTypes: ['PortfolioItem/Feature','PortfolioItem/MMF','PortfolioItem/Epic', 'PortfolioItem/Program'],
+						autoShow: true,
+						storeConfig:{
+							fetch: ['Name','PortfolioItemTypeName']
+						},
+						listeners: {
+							artifactChosen: function(selectedRecord) {
+								childrens = [];
+								this._type = selectedRecord.get('PortfolioItemTypeName');
+								this._newObj = selectedRecord;
+								this.onqModelRetrieved();
+								var self = this;
+								Ext.create('Rally.data.wsapi.Store', {
+									model: 'PortfolioItem/' + selectedRecord.get('PortfolioItemTypeName'),
+									fetch: ['Name', 'FormattedID', 'Children'],
+									pageSize: 1,
+									autoLoad: true,
+									listeners: {
+										load: function(store, records) {
+											final_features = [];
+											Ext.Array.each(records, function(child){
+												var item = selectedRecord;
+												childrens = item.getCollection('Children');
+												//console.log("item childrens value", childrens);
+												childrens.load({
+													fetch: ['FormattedID'],
+													callback: function(records, operation, success){
+														Ext.Array.each(records, function(portfolioitem){
+															if (portfolioitem.get('PortfolioItemTypeName') == "Feature") {
+																self._childObj = portfolioitem;
+																self._copyChild();
+																self.launch();
+															} else if (portfolioitem.get('PortfolioItemTypeName') == "MMF") {
+																self._childObj = portfolioitem;
+																self._copyChild();
+																self.launch();
+															} else if (portfolioitem.get('PortfolioItemTypeName') == "Epic") {
+																self.launch();
+															}
+															
+														}, self);	
+													},
+													scope: this	
+												});		
+											}, self);
+										}	
+									}
+								});
+							},
+							scope: this
+						},
+					}); 
+				},
+				// Inner Copy functions
+				_copyChild: function() {
+					this.innerModelRetrieved();
+				},
+				innerModelRetrieved: function() {
+					var that = this;
+					(function(){
+						var child = that._childObj;
+						 //console.log("in innerModelRetrieved, that._childObj.data.FormattedID:", that._childObj.data.FormattedID);
+						that._type = 'PortfolioItem/' + that._childObj.get('PortfolioItemTypeName');
+						Rally.data.ModelFactory.getModel({
+							type: that._type,
+							success: function(model){
+								that.onInnerModelRetrieved(model, child );
+							},
+							scope: that
+						});
+					})();
+				},                      
+				onInnerModelRetrieved: function(model, _childObj ) {
+					that = this;
+				    //console.log("in onInnerModelRetrieved, that._childObj.data.FormattedID:", _childObj.data.FormattedID);
+				    this.model = model;           
+					that._genericInnerCopy(_childObj);
+				},				
+				_genericInnerCopy: function(_childObj) {
+					that = this;
+					model = that.model;
+					var record = Ext.create(this.model, {
+						Name: _childObj.get('Name'),
+						//Parent: _newParent.get("_ref");,
+					});
+					record.save({
+						callback: function(result, operation) {
+							if(operation.wasSuccessful()) {
+								//that._record = result,
+			                    id = result.get("ObjectID");
+								var childrens = _newParent.getCollection('Children');
+			                    childrens.load(id,{
+			                        fetch:["Name","FormattedID","Parent"],
+			                        callback:function(other_record,operation){
+			                            //console.log("Parent prior to update:",_newParent.get("_ref")),
+			                            other_record.set("Parent", _newParent.get("_ref")),
+			                            other_record.save({
+			                            	callback:function(other_record,operation){
+			                            		if(operation.wasSuccessful()) {
+													console.log("now record value", other_record);
+											    } else {
+												    console.log("error");
+												}   
+											}
+										})
+
+									}
+								});
+                            }
+                        }
+                    })
+                },
+                //_readAndUpdate:function(){
+                    //var that = this,
+								//result.set('Parent', _newParent);
+								//Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
+							//}
+						//}
+					//});
+				//},      			
+				// Main Copy Functions
+				onqModelRetrieved: function() {
+					var that = this;
+					that._type = 'PortfolioItem/' + that._type,
+					Rally.data.ModelFactory.getModel({
+						type: that._type,
+						success: this.onModelRetrieved,
+						scope: this
+					});     
+				}, 				
+				onModelRetrieved: function(model) {
+					this.model = model;
+					this.createFeature();
+				},
+				createFeature: function() {
+					var record = Ext.create(this.model, {
+						Name: "(Copy of) " + this._newObj.get('Name'),
+					});
+					record.save({
+						callback: function(result, operation) {
+							if(operation.wasSuccessful()) {
+								_newParent = result
+								Ext.Msg.alert('created ' + result.get('PortfolioItemTypeName') + ':', result.get('Name'));
+							}
+							else{
+								console.log("error");
+							}
+						}
+					});
+				}       
+			});
+			Rally.launchApp('CustomApp', {
+				name: 'Feature Deep Copy'
+			});				
+		});
+	</script>
+
+	<style type="text/css">
+		.app {
+			 /* Add app styles here */
+		}
+	</style>
+</head>
+</html>		
